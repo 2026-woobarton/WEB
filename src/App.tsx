@@ -3,7 +3,7 @@ import { theme } from './theme'
 import type { Book, Message, PersistedState, Screen } from './types'
 import { TOPICS, CUSTOM_TOPIC_ID } from './data/topics'
 import { hasApiKey, MissingKeyError, speak, transcribe } from './api/openai'
-import { askNextQuestion, generateBook, generateCover } from './api/autobio'
+import { askNextQuestion, contentPages, generateBook, generateCover } from './api/autobio'
 import { useRecorder } from './hooks/useRecorder'
 import { TopicScreen } from './screens/TopicScreen'
 import { ChatScreen } from './screens/ChatScreen'
@@ -15,7 +15,13 @@ const STORAGE = 'autobio:state'
 function loadState(): Partial<PersistedState> {
   try {
     const raw = localStorage.getItem(STORAGE)
-    if (raw) return JSON.parse(raw) as PersistedState
+    if (!raw) return {}
+    const saved = JSON.parse(raw) as PersistedState
+    // 예전 chapters 구조로 저장된 책은 더 이상 읽을 수 없습니다. 책만 버리고 나머지는 살립니다.
+    if (saved.book && typeof saved.book.content !== 'string') {
+      return { ...saved, book: null, bookPage: 0, screen: saved.screen === 'book' ? 'topic' : saved.screen }
+    }
+    return saved
   } catch {
     /* ignore */
   }
@@ -205,7 +211,7 @@ export default function App() {
   // ------- book screen -------
   const flip = (dir: number) => {
     if (!book) return
-    const total = book.chapters.length + 1
+    const total = contentPages(book.content).length + 1
     const nextPage = bookPage + dir
     if (nextPage < 0 || nextPage >= total) return
     setFlipping(true)

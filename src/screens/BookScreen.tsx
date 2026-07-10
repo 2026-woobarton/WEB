@@ -1,3 +1,4 @@
+import { contentPages } from '../api/autobio'
 import { theme } from '../theme'
 import type { Book } from '../types'
 
@@ -16,14 +17,13 @@ interface CoverPage {
   kind: 'cover'
   subtitle: string
 }
-interface ChapterPage {
-  kind: 'chapter'
-  label: string
-  title: string
+/** 문단 두 개가 한 페이지입니다. */
+interface TextPage {
+  kind: 'text'
   paragraphs: string[]
   pageNo: number
 }
-type Page = CoverPage | ChapterPage
+type Page = CoverPage | TextPage
 
 /**
  * 삽화를 종이 위에 얹습니다.
@@ -67,19 +67,14 @@ export function BookScreen({
   onPrint,
   onRestart,
 }: Props) {
-  const pages: Page[] = [{ kind: 'cover', subtitle: book.subtitle || '' }]
-  book.chapters.forEach((c, i) => {
-    pages.push({
-      kind: 'chapter',
-      label: `제 ${i + 1} 장`,
-      title: c.title,
-      paragraphs: String(c.body || '')
-        .split(/\n{2,}/)
-        .map((s) => s.trim())
-        .filter(Boolean),
+  const pages: Page[] = [
+    { kind: 'cover', subtitle: book.subtitle || '' },
+    ...contentPages(book.content).map((paragraphs, i) => ({
+      kind: 'text' as const,
+      paragraphs,
       pageNo: i + 1,
-    })
-  })
+    })),
+  ]
 
   const cur = pages[Math.min(page, pages.length - 1)]
   const navBase = {
@@ -216,24 +211,15 @@ export function BookScreen({
               <div style={{ width: 64, height: 2, background: theme.accent, marginTop: 30 }} />
             </div>
           ) : (
-            <div>
-              <div style={{ fontSize: 14, letterSpacing: 3, color: theme.accent, marginBottom: 8 }}>
-                {cur.label}
-              </div>
-              <h2
-                style={{
-                  fontFamily: theme.fontSerif,
-                  fontWeight: 800,
-                  fontSize: 30,
-                  lineHeight: 1.4,
-                  color: theme.ink,
-                  margin: '0 0 26px',
-                  paddingBottom: 18,
-                  borderBottom: `1px solid ${theme.line}`,
-                }}
-              >
-                {cur.title}
-              </h2>
+            <div
+              style={{
+                minHeight: 440,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                gap: 22,
+              }}
+            >
               {cur.paragraphs.map((para, i) => (
                 <p
                   key={i}
@@ -242,7 +228,7 @@ export function BookScreen({
                     fontSize: 19,
                     lineHeight: 2,
                     color: '#40382b',
-                    margin: '0 0 18px',
+                    margin: 0,
                     textIndent: '1.2em',
                     textWrap: 'pretty',
                   }}
@@ -263,7 +249,7 @@ export function BookScreen({
               color: '#b3a68f',
             }}
           >
-            {cur.kind === 'chapter' ? cur.pageNo : ''}
+            {cur.kind === 'text' ? cur.pageNo : ''}
           </span>
         </div>
       </div>
