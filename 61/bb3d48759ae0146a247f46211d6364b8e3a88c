@@ -1,0 +1,21 @@
+tsconfig.node.tsbuildinfo
+  s_716417800bac94::t_6c62ec2b2356cb 1
+tsconfig.tsbuildinfo
+  s_716417800bac94::t_7cbac4fd3232f9 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "61bb3d48759ae0146a247f46211d6364b8e3a88c",
+  "prompts": {},
+  "sessions": {
+    "s_716417800bac94": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d8832a70-305b-4b62-92d8-4c71db9a7ea3",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "AppleMint98 <applemint9821@gmail.com>"
+    }
+  }
+}
