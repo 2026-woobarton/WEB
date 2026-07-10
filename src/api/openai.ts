@@ -98,6 +98,37 @@ export async function transcribe(audio: Blob): Promise<string> {
   return (data.text ?? '').trim()
 }
 
+// 삽화 생성 모델. 비용을 올리려면 'gpt-image-1' → 'gpt-image-1.5' → 'gpt-image-2' 순으로 바꾸세요.
+// (2026-07 기준 출력 토큰 단가: mini $8/1M, gpt-image-1 $32/1M. low 품질 1024px 한 장이 272토큰)
+const IMAGE_MODEL = 'gpt-image-1-mini'
+const IMAGE_QUALITY = 'low'
+
+/**
+ * 프롬프트 → 삽화 data URL.
+ * gpt-image 계열은 URL 을 주지 않고 base64 만 돌려줍니다.
+ * PNG 로 받으면 한 장이 1.7MB 라 localStorage 에 담을 수 없어 webp 로 압축해 받습니다(약 80KB).
+ */
+export async function generateImage(prompt: string): Promise<string> {
+  const res = await fetch(`${OPENAI_BASE}/images/generations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({
+      model: IMAGE_MODEL,
+      prompt,
+      size: '1024x1024',
+      quality: IMAGE_QUALITY,
+      n: 1,
+      output_format: 'webp',
+      output_compression: 60,
+    }),
+  })
+  if (!res.ok) throw new Error(`그림 생성 오류 (${res.status}): ${await res.text()}`)
+  const data = await res.json()
+  const b64 = data.data?.[0]?.b64_json
+  if (!b64) throw new Error('그림 데이터가 비어 있습니다')
+  return `data:image/webp;base64,${b64}`
+}
+
 /** 텍스트 → 음성 mp3 objectURL (TTS). 재생은 호출부에서 <audio> 로 처리 */
 export async function speak(text: string): Promise<string> {
   const res = await fetch(`${OPENAI_BASE}/audio/speech`, {

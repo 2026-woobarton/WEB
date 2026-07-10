@@ -5,6 +5,7 @@ interface Props {
   book: Book
   page: number
   flipping: boolean
+  illustrating: boolean
   onPrev: () => void
   onNext: () => void
   onPrint: () => void
@@ -24,7 +25,48 @@ interface ChapterPage {
 }
 type Page = CoverPage | ChapterPage
 
-export function BookScreen({ book, page, flipping, onPrev, onNext, onPrint, onRestart }: Props) {
+/**
+ * 삽화를 종이 위에 얹습니다.
+ * multiply 로 밝은 크림 배경이 종이에 녹아들고, mask 로 가장자리를 흐려 경계선을 없앱니다.
+ */
+const blendIntoPaper = {
+  mixBlendMode: 'multiply',
+  maskImage: 'radial-gradient(ellipse at center, #000 55%, transparent 100%)',
+  WebkitMaskImage: 'radial-gradient(ellipse at center, #000 55%, transparent 100%)',
+} as const
+
+/**
+ * 그림이 아직 안 온 자리. 그리는 중일 때만 자리를 잡습니다.
+ * 그림 없이 저장된 옛 책이나 생성에 실패한 경우에는 빈 공간을 남기지 않습니다.
+ */
+function ImagePlaceholder({ height, illustrating }: { height: number; illustrating: boolean }) {
+  if (!illustrating) return null
+  return (
+    <div
+      style={{
+        height,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 14,
+        color: '#c3b49a',
+      }}
+    >
+      그림을 그리는 중이에요…
+    </div>
+  )
+}
+
+export function BookScreen({
+  book,
+  page,
+  flipping,
+  illustrating,
+  onPrev,
+  onNext,
+  onPrint,
+  onRestart,
+}: Props) {
   const pages: Page[] = [{ kind: 'cover', subtitle: book.subtitle || '' }]
   book.chapters.forEach((c, i) => {
     pages.push({
@@ -128,7 +170,7 @@ export function BookScreen({ book, page, flipping, onPrev, onNext, onPrint, onRe
           {cur.kind === 'cover' ? (
             <div
               style={{
-                height: 440,
+                minHeight: 440,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -136,8 +178,24 @@ export function BookScreen({ book, page, flipping, onPrev, onNext, onPrint, onRe
                 textAlign: 'center',
               }}
             >
-              <div style={{ width: 64, height: 2, background: theme.accent, marginBottom: 30 }} />
-              <div style={{ fontSize: 15, letterSpacing: 5, color: theme.accent, marginBottom: 22 }}>
+              {book.cover ? (
+                <img
+                  src={book.cover}
+                  alt=""
+                  style={{
+                    width: 260,
+                    height: 260,
+                    objectFit: 'cover',
+                    borderRadius: '50%',
+                    marginBottom: 18,
+                    ...blendIntoPaper,
+                  }}
+                />
+              ) : (
+                <ImagePlaceholder height={260} illustrating={illustrating} />
+              )}
+              <div style={{ width: 64, height: 2, background: theme.accent, marginBottom: 24 }} />
+              <div style={{ fontSize: 15, letterSpacing: 5, color: theme.accent, marginBottom: 20 }}>
                 자 서 전
               </div>
               <h1

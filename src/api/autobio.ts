@@ -1,5 +1,5 @@
 // 프롬프트 & 자서전 JSON 파싱 유틸
-import { chat } from './openai'
+import { chat, generateImage } from './openai'
 import type { Book, Message } from '../types'
 
 /** 인터뷰에서 다룰 소재. 이미 나온 이야기는 다시 묻지 않습니다. */
@@ -161,5 +161,47 @@ function parseBook(raw: string, topic: string): Book {
     title: '나의 이야기',
     subtitle: topic,
     chapters: [{ title: '나의 이야기', body: raw.trim() }],
+  }
+}
+
+// ---------------------------------------------------------------- 삽화
+
+/**
+ * 모든 삽화에 공통으로 붙이는 화풍 지시.
+ * 책 페이지 배경(theme.page = #fdfaf1)과 섞이도록 밝은 크림 바탕에 옅은 세피아로 그립니다.
+ */
+const IMAGE_STYLE = `부드러운 수채화 삽화.
+크림색 종이(#fdfaf1) 위에 옅게 번진 그림. 바랜 세피아, 흐린 황토, 낮은 채도의 올리브 톤만 사용한다.
+윤곽선은 흐릿하고 여백이 넉넉하다. 가장자리로 갈수록 색이 옅어져 종이에 스미듯 사라진다.
+전체적으로 밝고 은은하며, 어두운 검정이나 강한 원색을 쓰지 않는다.
+사람은 멀리서 본 실루엣으로만 그리고 얼굴을 또렷하게 그리지 않는다.
+글자, 문자, 숫자, 서명, 워터마크, 액자, 테두리를 절대 넣지 않는다.`
+
+/** 표지: 책 전체를 아우르는 한 장면 */
+function coverPrompt(book: Book): string {
+  const gist = book.chapters
+    .map((c) => c.body.slice(0, 120))
+    .join(' ')
+    .slice(0, 900)
+  return `한 사람의 자서전 표지에 들어갈 그림.
+제목: "${book.title}" / 부제: "${book.subtitle}"
+이 책이 담고 있는 삶: ${gist}
+
+이 삶 전체를 대표하는 조용한 풍경 하나를 그린다. 사건을 나열하지 말고 한 장면에 담는다.
+
+${IMAGE_STYLE}`
+}
+
+/**
+ * 표지 삽화 한 장을 그립니다. 실패하면 null 을 돌려줍니다.
+ * 그림은 없어도 책은 읽을 수 있어야 하므로 예외를 밖으로 던지지 않습니다.
+ */
+export async function generateCover(book: Book): Promise<string | null> {
+  try {
+    return await generateImage(coverPrompt(book))
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('표지 그림 생성 실패', e)
+    return null
   }
 }

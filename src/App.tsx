@@ -3,7 +3,7 @@ import { theme } from './theme'
 import type { Book, Message, PersistedState, Screen } from './types'
 import { TOPICS, CUSTOM_TOPIC_ID } from './data/topics'
 import { hasApiKey, MissingKeyError, speak, transcribe } from './api/openai'
-import { askNextQuestion, generateBook } from './api/autobio'
+import { askNextQuestion, generateBook, generateCover } from './api/autobio'
 import { useRecorder } from './hooks/useRecorder'
 import { TopicScreen } from './screens/TopicScreen'
 import { ChatScreen } from './screens/ChatScreen'
@@ -35,6 +35,7 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [transcribing, setTranscribing] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [illustrating, setIllustrating] = useState(false)
   const [draft, setDraft] = useState('')
   const [editingIndex, setEditingIndex] = useState(-1)
   const [editValue, setEditValue] = useState('')
@@ -177,9 +178,11 @@ export default function App() {
     if (audioRef.current) audioRef.current.pause()
     setGenerating(true)
     setErrorMsg('')
+    let written: Book | null = null
     try {
       const b = await generateBook(topicLabel(), messages)
       if (myRun !== runId.current) return // 그 사이 초기화됨
+      written = b
       setBook(b)
       setBookPage(0)
       setScreen('book')
@@ -189,6 +192,14 @@ export default function App() {
     } finally {
       if (myRun === runId.current) setGenerating(false)
     }
+
+    // 글이 먼저 보이고, 표지 그림은 뒤이어 채워집니다(10~15초).
+    if (!written) return
+    setIllustrating(true)
+    const cover = await generateCover(written)
+    if (myRun !== runId.current) return // 그 사이 초기화됨
+    if (cover) setBook((prev) => (prev ? { ...prev, cover } : prev))
+    setIllustrating(false)
   }
 
   // ------- book screen -------
@@ -223,6 +234,7 @@ export default function App() {
     setLoading(false)
     setGenerating(false)
     setTranscribing(false)
+    setIllustrating(false)
 
     try {
       localStorage.removeItem(STORAGE)
@@ -298,6 +310,7 @@ export default function App() {
           book={book}
           page={bookPage}
           flipping={flipping}
+          illustrating={illustrating}
           onPrev={() => flip(-1)}
           onNext={() => flip(1)}
           onPrint={() => window.print()}

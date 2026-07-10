@@ -21,6 +21,8 @@ export interface Book {
   title: string
   subtitle: string
   chapters: Chapter[]
+  /** 표지 삽화. data:image/webp;base64,… (그림 생성 실패 시 없음) */
+  cover?: string
 }
 
 // localStorage 에 저장/복원하는 형태
