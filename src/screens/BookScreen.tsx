@@ -1,0 +1,238 @@
+import { theme } from '../theme'
+import type { Book } from '../types'
+
+interface Props {
+  book: Book
+  page: number
+  flipping: boolean
+  onPrev: () => void
+  onNext: () => void
+  onPrint: () => void
+  onRestart: () => void
+}
+
+interface CoverPage {
+  kind: 'cover'
+  subtitle: string
+}
+interface ChapterPage {
+  kind: 'chapter'
+  label: string
+  title: string
+  paragraphs: string[]
+  pageNo: number
+}
+type Page = CoverPage | ChapterPage
+
+export function BookScreen({ book, page, flipping, onPrev, onNext, onPrint, onRestart }: Props) {
+  const pages: Page[] = [{ kind: 'cover', subtitle: book.subtitle || '' }]
+  book.chapters.forEach((c, i) => {
+    pages.push({
+      kind: 'chapter',
+      label: `제 ${i + 1} 장`,
+      title: c.title,
+      paragraphs: String(c.body || '')
+        .split(/\n{2,}/)
+        .map((s) => s.trim())
+        .filter(Boolean),
+      pageNo: i + 1,
+    })
+  })
+
+  const cur = pages[Math.min(page, pages.length - 1)]
+  const navBase = {
+    background: theme.paper,
+    border: '1px solid #d8c9aa',
+    color: '#4a4133',
+    borderRadius: 12,
+    padding: '12px 24px',
+    fontSize: 17,
+  } as const
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '34px 20px 44px',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 760,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 22,
+        }}
+      >
+        <button
+          onClick={onRestart}
+          style={{
+            background: 'transparent',
+            border: '1px solid #d8c9aa',
+            color: theme.inkSoft,
+            borderRadius: 10,
+            padding: '10px 16px',
+            fontSize: 15,
+            cursor: 'pointer',
+          }}
+        >
+          ← 새 이야기
+        </button>
+        <span style={{ fontFamily: theme.fontHand, fontSize: 24, color: theme.accent }}>
+          {book.title}
+        </span>
+        <button
+          onClick={onPrint}
+          style={{
+            background: theme.accent,
+            border: 'none',
+            color: '#fff',
+            borderRadius: 10,
+            padding: '10px 18px',
+            fontSize: 15,
+            cursor: 'pointer',
+          }}
+        >
+          인쇄 · 저장
+        </button>
+      </div>
+
+      <div
+        style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          transition: 'opacity .16s ease, transform .16s ease',
+          opacity: flipping ? 0 : 1,
+          transform: flipping ? 'translateY(8px)' : 'none',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 720,
+            minHeight: 560,
+            background: theme.page,
+            border: `1px solid ${theme.edge}`,
+            borderRadius: 6,
+            boxShadow: '0 30px 60px -30px rgba(80,58,24,.55), inset 0 0 60px rgba(214,196,158,.18)',
+            padding: '60px 62px',
+            position: 'relative',
+          }}
+        >
+          {cur.kind === 'cover' ? (
+            <div
+              style={{
+                height: 440,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ width: 64, height: 2, background: theme.accent, marginBottom: 30 }} />
+              <div style={{ fontSize: 15, letterSpacing: 5, color: theme.accent, marginBottom: 22 }}>
+                자 서 전
+              </div>
+              <h1
+                style={{
+                  fontFamily: theme.fontSerif,
+                  fontWeight: 800,
+                  fontSize: 40,
+                  lineHeight: 1.4,
+                  color: theme.ink,
+                  margin: '0 0 20px',
+                }}
+              >
+                {book.title}
+              </h1>
+              <p style={{ fontFamily: theme.fontHand, fontSize: 22, color: theme.inkSoft, margin: 0 }}>
+                {cur.subtitle}
+              </p>
+              <div style={{ width: 64, height: 2, background: theme.accent, marginTop: 30 }} />
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: 14, letterSpacing: 3, color: theme.accent, marginBottom: 8 }}>
+                {cur.label}
+              </div>
+              <h2
+                style={{
+                  fontFamily: theme.fontSerif,
+                  fontWeight: 800,
+                  fontSize: 30,
+                  lineHeight: 1.4,
+                  color: theme.ink,
+                  margin: '0 0 26px',
+                  paddingBottom: 18,
+                  borderBottom: `1px solid ${theme.line}`,
+                }}
+              >
+                {cur.title}
+              </h2>
+              {cur.paragraphs.map((para, i) => (
+                <p
+                  key={i}
+                  style={{
+                    fontFamily: theme.fontSerif,
+                    fontSize: 19,
+                    lineHeight: 2,
+                    color: '#40382b',
+                    margin: '0 0 18px',
+                    textIndent: '1.2em',
+                    textWrap: 'pretty',
+                  }}
+                >
+                  {para}
+                </p>
+              ))}
+            </div>
+          )}
+          <span
+            style={{
+              position: 'absolute',
+              bottom: 26,
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              fontSize: 14,
+              color: '#b3a68f',
+            }}
+          >
+            {cur.kind === 'chapter' ? cur.pageNo : ''}
+          </span>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginTop: 26 }}>
+        <button
+          onClick={onPrev}
+          disabled={page <= 0}
+          style={{ ...navBase, cursor: page <= 0 ? 'not-allowed' : 'pointer', opacity: page <= 0 ? 0.4 : 1 }}
+        >
+          ◀ 이전
+        </button>
+        <span style={{ fontSize: 16, color: theme.inkSoft, minWidth: 70, textAlign: 'center' }}>
+          {page + 1} / {pages.length}
+        </span>
+        <button
+          onClick={onNext}
+          disabled={page >= pages.length - 1}
+          style={{
+            ...navBase,
+            cursor: page >= pages.length - 1 ? 'not-allowed' : 'pointer',
+            opacity: page >= pages.length - 1 ? 0.4 : 1,
+          }}
+        >
+          다음 ▶
+        </button>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,23 @@
+{
+  "name": "autobio-app",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "AI 자서전 작성 앱 — 음성으로 답하면 AI가 질문을 이어가고 한 권의 자서전으로 엮어 줍니다.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.5"
+  }
+}

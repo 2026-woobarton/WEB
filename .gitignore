@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vite
+
+# 환경변수 (실제 키가 들어가므로 커밋 금지). 템플릿인 .env.example 만 추적합니다.
+.env
+.env.*
+!.env.example
