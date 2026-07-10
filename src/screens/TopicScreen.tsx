@@ -9,6 +9,7 @@ interface Props {
   onCustomChange: (v: string) => void
   onStart: () => void
   onOpenSettings: () => void
+  onReset: () => void
 }
 
 export function TopicScreen({
@@ -19,6 +20,7 @@ export function TopicScreen({
   onCustomChange,
   onStart,
   onOpenSettings,
+  onReset,
 }: Props) {
   const canStart =
     !!topicId && !(topicId === CUSTOM_TOPIC_ID && !customTopic.trim())
@@ -34,6 +36,24 @@ export function TopicScreen({
       }}
     >
       <div style={{ textAlign: 'center', marginBottom: 44, position: 'relative' }}>
+        <button
+          onClick={onReset}
+          title="입력한 내용을 모두 지우고 처음 상태로 돌아갑니다"
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            background: theme.paper,
+            border: `1px solid ${theme.edge}`,
+            color: theme.inkSoft,
+            borderRadius: 10,
+            padding: '8px 14px',
+            fontSize: 14,
+            cursor: 'pointer',
+          }}
+        >
+          ↺ 초기화
+        </button>
         <button
           onClick={onOpenSettings}
           style={{

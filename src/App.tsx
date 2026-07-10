@@ -45,6 +45,10 @@ export default function App() {
   const recorder = useRecorder()
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
+  // 초기화할 때마다 증가. 진행 중이던 요청의 응답이 뒤늦게 도착해
+  // 비워진 화면에 다시 끼어드는 것을 막습니다.
+  const runId = useRef(0)
+
   // persist
   useEffect(() => {
     try {
@@ -86,15 +90,18 @@ export default function App() {
   // 다음 질문 받아오기
   const askNext = useCallback(
     async (msgs: Message[]) => {
+      const myRun = runId.current
       setLoading(true)
       try {
         const q = await askNextQuestion(topicLabel(), msgs)
+        if (myRun !== runId.current) return // 그 사이 초기화됨 — 결과를 버립니다
         setMessages((prev) => [...prev, { role: 'ai', text: q }])
         void playTTS(q)
       } catch (e) {
+        if (myRun !== runId.current) return
         handleError(e)
       } finally {
-        setLoading(false)
+        if (myRun === runId.current) setLoading(false)
       }
     },
     [topicLabel, playTTS],
@@ -165,19 +172,22 @@ export default function App() {
   }
 
   const onFinish = async () => {
+    const myRun = runId.current
     if (recorder.recording) await recorder.stop()
     if (audioRef.current) audioRef.current.pause()
     setGenerating(true)
     setErrorMsg('')
     try {
       const b = await generateBook(topicLabel(), messages)
+      if (myRun !== runId.current) return // 그 사이 초기화됨
       setBook(b)
       setBookPage(0)
       setScreen('book')
     } catch (e) {
+      if (myRun !== runId.current) return
       handleError(e)
     } finally {
-      setGenerating(false)
+      if (myRun === runId.current) setGenerating(false)
     }
   }
 
@@ -194,7 +204,26 @@ export default function App() {
     }, 160)
   }
 
-  const onRestart = () => {
+  // 아무것도 입력되지 않은 처음 상태로. (API 키는 설정에 그대로 남습니다)
+  const onRestart = async () => {
+    const hasProgress =
+      topicId !== null || customTopic.trim() !== '' || messages.length > 0 || book !== null
+    if (hasProgress && !window.confirm('지금까지의 이야기가 모두 지워집니다. 처음부터 다시 시작할까요?')) {
+      return
+    }
+
+    runId.current += 1 // 진행 중인 요청의 결과를 무효화
+
+    if (recorder.recording) await recorder.stop()
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.removeAttribute('src')
+    }
+
+    setLoading(false)
+    setGenerating(false)
+    setTranscribing(false)
+
     try {
       localStorage.removeItem(STORAGE)
     } catch {
@@ -207,6 +236,10 @@ export default function App() {
     setBook(null)
     setBookPage(0)
     setDraft('')
+    setEditingIndex(-1)
+    setEditValue('')
+    setErrorMsg('')
+    setFlipping(false)
   }
 
   const lastAi = [...messages].reverse().find((m) => m.role === 'ai')
@@ -229,6 +262,7 @@ export default function App() {
           onCustomChange={setCustomTopic}
           onStart={onStart}
           onOpenSettings={() => setShowSettings(true)}
+          onReset={() => void onRestart()}
         />
       )}
 
@@ -246,6 +280,7 @@ export default function App() {
           editingIndex={editingIndex}
           editValue={editValue}
           errorMsg={errorMsg}
+          onReset={() => void onRestart()}
           onReplay={onReplay}
           onToggleRecord={onToggleRecord}
           onDraftChange={setDraft}
@@ -266,7 +301,7 @@ export default function App() {
           onPrev={() => flip(-1)}
           onNext={() => flip(1)}
           onPrint={() => window.print()}
-          onRestart={onRestart}
+          onRestart={() => void onRestart()}
         />
       )}
 

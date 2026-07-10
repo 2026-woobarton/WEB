@@ -14,6 +14,7 @@ interface Props {
   editingIndex: number
   editValue: string
   errorMsg: string
+  onReset: () => void
   onReplay: () => void
   onToggleRecord: () => void
   onDraftChange: (v: string) => void
@@ -76,7 +77,24 @@ export function ChatScreen(p: Props) {
           zIndex: 20,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+          <button
+            onClick={p.onReset}
+            title="입력한 내용을 모두 지우고 처음 상태로 돌아갑니다"
+            style={{
+              background: theme.paper,
+              border: `1px solid ${theme.edge}`,
+              color: theme.inkSoft,
+              borderRadius: 10,
+              padding: '8px 14px',
+              fontSize: 14,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+          >
+            ↺ 초기화
+          </button>
           <span style={{ fontFamily: theme.fontHand, fontSize: 26, color: theme.accent, whiteSpace: 'nowrap' }}>
             나의 이야기
           </span>
