@@ -1,1 +1,0 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/theme.ts","./src/types.ts","./src/vite-env.d.ts","./src/api/autobio.ts","./src/api/openai.ts","./src/components/settingsmodal.tsx","./src/data/topics.ts","./src/hooks/userecorder.ts","./src/screens/bookscreen.tsx","./src/screens/chatscreen.tsx","./src/screens/topicscreen.tsx"],"errors":true,"version":"5.9.3"}
